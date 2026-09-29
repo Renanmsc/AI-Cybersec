@@ -1,12 +1,18 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const elementoPagina =
-    document.querySelector("#page");
+function mostrarQuantidade(valor, nomeSingular) {
+  if (typeof valor !== "number") {
+    return "Não foi possível consultar";
+  }
 
-  const elementoRequisicoes =
-    document.querySelector("#requests");
+  if (valor === 0) {
+    return `Nenhum ${nomeSingular} detectado`;
+  }
 
-  const elementoCookies =
-    document.querySelector("#cookies");
+  return `${valor} ${nomeSingular}(s)`;
+}
+
+function atualizarArmazenamento(relatorio) {
+  const armazenamento =
+    relatorio.storage || {};
 
   const elementoLocalStorage =
     document.querySelector("#localStorage");
@@ -16,6 +22,72 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const elementoIndexedDB =
     document.querySelector("#indexedDB");
+
+  elementoLocalStorage.textContent =
+    mostrarQuantidade(
+      armazenamento.localStorageItems,
+      "item"
+    );
+
+  elementoSessionStorage.textContent =
+    mostrarQuantidade(
+      armazenamento.sessionStorageItems,
+      "item"
+    );
+
+  const indexedDB =
+    armazenamento.indexedDB || {};
+
+  if (indexedDB.available === false) {
+    elementoIndexedDB.textContent =
+      "API não disponível";
+    return;
+  }
+
+  if (indexedDB.checked === false) {
+    elementoIndexedDB.textContent =
+      "Não foi possível consultar";
+    return;
+  }
+
+  elementoIndexedDB.textContent =
+    mostrarQuantidade(
+      indexedDB.databaseCount,
+      "banco"
+    );
+}
+
+function atualizarCookies(relatorio) {
+  const cookies = relatorio.cookies || {
+    total: relatorio.cookieCount || 0,
+    firstParty: 0,
+    thirdParty: 0,
+    session: 0,
+    persistent: 0
+  };
+
+  document.querySelector("#cookies").textContent =
+    cookies.total ?? 0;
+
+  document.querySelector("#firstPartyCookies").textContent =
+    cookies.firstParty ?? 0;
+
+  document.querySelector("#thirdPartyCookies").textContent =
+    cookies.thirdParty ?? 0;
+
+  document.querySelector("#sessionCookies").textContent =
+    cookies.session ?? 0;
+
+  document.querySelector("#persistentCookies").textContent =
+    cookies.persistent ?? 0;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const elementoPagina =
+    document.querySelector("#page");
+
+  const elementoRequisicoes =
+    document.querySelector("#requests");
 
   const listaTerceiros =
     document.querySelector("#thirdParties");
@@ -31,7 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!abaAtual || !abaAtual.id) {
       elementoPagina.textContent =
         "Página indisponível";
-
       return;
     }
 
@@ -45,14 +116,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
     elementoRequisicoes.textContent =
-      relatorio.requestCount;
+      relatorio.requestCount ?? 0;
 
-    elementoCookies.textContent =
-      relatorio.cookieCount ?? 0;
-
-    atualizarArmazenamento(
-      relatorio.storage
-    );
+    atualizarCookies(relatorio);
+    atualizarArmazenamento(relatorio);
 
     listaTerceiros.innerHTML = "";
 
@@ -63,7 +130,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         "Nenhum domínio de terceiros encontrado.";
 
       listaTerceiros.appendChild(item);
-
       return;
     }
 
@@ -86,84 +152,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Erro ao carregar a página";
 
     elementoRequisicoes.textContent = "0";
-    elementoCookies.textContent = "0";
-    elementoLocalStorage.textContent =
-      "Erro na consulta";
-    elementoSessionStorage.textContent =
-      "Erro na consulta";
-    elementoIndexedDB.textContent =
-      "Erro na consulta";
+
+    atualizarCookies({
+      cookieCount: 0,
+      cookies: {
+        total: 0,
+        firstParty: 0,
+        thirdParty: 0,
+        session: 0,
+        persistent: 0
+      }
+    });
 
     listaTerceiros.innerHTML =
       "<li>Não foi possível obter os dados.</li>";
   }
 });
-
-function atualizarArmazenamento(armazenamento) {
-  if (!armazenamento) {
-    document.querySelector("#localStorage")
-      .textContent = "Não analisado";
-
-    document.querySelector("#sessionStorage")
-      .textContent = "Não analisado";
-
-    document.querySelector("#indexedDB")
-      .textContent = "Não analisado";
-
-    return;
-  }
-
-  const elementoLocalStorage =
-    document.querySelector("#localStorage");
-
-  const elementoSessionStorage =
-    document.querySelector("#sessionStorage");
-
-  const elementoIndexedDB =
-    document.querySelector("#indexedDB");
-
-  const quantidadeLocalStorage =
-    armazenamento.localStorageItems;
-
-  if (quantidadeLocalStorage === null) {
-    elementoLocalStorage.textContent =
-      "Não foi possível consultar";
-  } else if (quantidadeLocalStorage > 0) {
-    elementoLocalStorage.textContent =
-      `${quantidadeLocalStorage} item(ns)`;
-  } else {
-    elementoLocalStorage.textContent =
-      "Nenhum item detectado";
-  }
-
-  const quantidadeSessionStorage =
-    armazenamento.sessionStorageItems;
-
-  if (quantidadeSessionStorage === null) {
-    elementoSessionStorage.textContent =
-      "Não foi possível consultar";
-  } else if (quantidadeSessionStorage > 0) {
-    elementoSessionStorage.textContent =
-      `${quantidadeSessionStorage} item(ns)`;
-  } else {
-    elementoSessionStorage.textContent =
-      "Nenhum item detectado";
-  }
-
-  const indexedDB =
-    armazenamento.indexedDB;
-
-  if (!indexedDB.available) {
-    elementoIndexedDB.textContent =
-      "API não disponível";
-  } else if (!indexedDB.checked) {
-    elementoIndexedDB.textContent =
-      "Não foi possível verificar";
-  } else if (indexedDB.databaseCount > 0) {
-    elementoIndexedDB.textContent =
-      `${indexedDB.databaseCount} banco(s)`;
-  } else {
-    elementoIndexedDB.textContent =
-      "Nenhum banco detectado";
-  }
-}

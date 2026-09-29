@@ -2,16 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Privacy Tracker Detector</title>
 
   <style>
     body {
-      width: 320px;
+      width: 340px;
       font-family: Arial, sans-serif;
       padding: 12px;
     }
@@ -55,33 +52,51 @@
     <span id="requests">0</span>
   </p>
 
-  <p>
-    <strong>Cookies encontrados:</strong>
-    <span id="cookies">0</span>
-  </p>
+  <h2>Cookies</h2>
+
+  <ul>
+    <li>
+      Total:
+      <span id="cookies">0</span>
+    </li>
+
+    <li>
+      Primeira parte:
+      <span id="firstPartyCookies">0</span>
+    </li>
+
+    <li>
+      Terceira parte:
+      <span id="thirdPartyCookies">0</span>
+    </li>
+
+    <li>
+      Sessão:
+      <span id="sessionCookies">0</span>
+    </li>
+
+    <li>
+      Persistentes:
+      <span id="persistentCookies">0</span>
+    </li>
+  </ul>
 
   <h2>Armazenamento HTML5</h2>
 
   <ul>
     <li>
-      <strong>localStorage:</strong>
-      <span id="localStorage">
-        Aguardando...
-      </span>
+      localStorage:
+      <span id="localStorage">Carregando...</span>
     </li>
 
     <li>
-      <strong>sessionStorage:</strong>
-      <span id="sessionStorage">
-        Aguardando...
-      </span>
+      sessionStorage:
+      <span id="sessionStorage">Carregando...</span>
     </li>
 
     <li>
-      <strong>IndexedDB:</strong>
-      <span id="indexedDB">
-        Aguardando...
-      </span>
+      IndexedDB:
+      <span id="indexedDB">Carregando...</span>
     </li>
   </ul>
 
