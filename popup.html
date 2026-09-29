@@ -2,15 +2,61 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Privacy Tracker Detector</title>
+
+  <style>
+    body {
+      width: 320px;
+      font-family: Arial, sans-serif;
+      padding: 12px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    #page {
+      word-break: break-all;
+      color: #444;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 5px;
+      word-break: break-all;
+    }
+  </style>
 </head>
+
 <body>
   <h1>Privacy Tracker Detector</h1>
 
-  <p>Página atual:</p>
-  <p id="page">Carregando...</p>
+  <p>
+    <strong>Página:</strong>
+    <span id="page">Carregando...</span>
+  </p>
 
-  <p>Status: extensão carregada.</p>
+  <p>
+    <strong>Requisições observadas:</strong>
+    <span id="requests">0</span>
+  </p>
+
+  <h2>Domínios de terceiros</h2>
+
+  <ul id="thirdParties">
+    <li>Nenhum domínio encontrado.</li>
+  </ul>
 
   <script src="popup.js"></script>
 </body>
