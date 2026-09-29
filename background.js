@@ -18,12 +18,25 @@ function obterChaveDoSite(host) {
   return partes.slice(-2).join(".");
 }
 
+function criarArmazenamentoVazio() {
+  return {
+    localStorageItems: null,
+    sessionStorageItems: null,
+    indexedDB: {
+      available: false,
+      checked: false,
+      databaseCount: null
+    }
+  };
+}
+
 function criarRelatorio(url) {
   return {
     pageUrl: url,
     pageHost: extrairHost(url),
     requestCount: 0,
-    thirdParties: new Map()
+    thirdParties: new Map(),
+    storage: criarArmazenamentoVazio()
   };
 }
 
@@ -52,29 +65,44 @@ browser.webRequest.onBeforeRequest.addListener(
       return;
     }
 
-    const relatorio = relatoriosPorAba.get(details.tabId);
+    const relatorio =
+      relatoriosPorAba.get(details.tabId);
 
     if (!relatorio) {
       return;
     }
 
-    const hostRequisitado = extrairHost(details.url);
+    const hostRequisitado =
+      extrairHost(details.url);
 
-    if (!hostRequisitado || !relatorio.pageHost) {
+    if (
+      !hostRequisitado ||
+      !relatorio.pageHost
+    ) {
       return;
     }
 
     relatorio.requestCount++;
 
-    const siteDaPagina = obterChaveDoSite(relatorio.pageHost);
-    const siteRequisitado = obterChaveDoSite(hostRequisitado);
+    const siteDaPagina =
+      obterChaveDoSite(relatorio.pageHost);
+
+    const siteRequisitado =
+      obterChaveDoSite(hostRequisitado);
 
     if (siteDaPagina !== siteRequisitado) {
-      if (!relatorio.thirdParties.has(hostRequisitado)) {
-        relatorio.thirdParties.set(hostRequisitado, {
-          host: hostRequisitado,
-          requestCount: 0
-        });
+      if (
+        !relatorio.thirdParties.has(
+          hostRequisitado
+        )
+      ) {
+        relatorio.thirdParties.set(
+          hostRequisitado,
+          {
+            host: hostRequisitado,
+            requestCount: 0
+          }
+        );
 
         console.log(
           "Domínio de terceira parte encontrado:",
@@ -82,7 +110,11 @@ browser.webRequest.onBeforeRequest.addListener(
         );
       }
 
-      const dominio = relatorio.thirdParties.get(hostRequisitado);
+      const dominio =
+        relatorio.thirdParties.get(
+          hostRequisitado
+        );
+
       dominio.requestCount++;
     }
   },
@@ -91,28 +123,96 @@ browser.webRequest.onBeforeRequest.addListener(
   }
 );
 
-browser.runtime.onMessage.addListener((message) => {
-  if (message.type === "CONTENT_SCRIPT_READY") {
-    console.log("Página analisada:", message.url);
-  }
-
-  if (message.type === "GET_REPORT") {
-    const relatorio = relatoriosPorAba.get(message.tabId);
-
-    if (!relatorio) {
-      return Promise.resolve({
-        pageUrl: "",
-        requestCount: 0,
-        thirdParties: []
-      });
+browser.runtime.onMessage.addListener(
+  async (message, sender) => {
+    if (message.type === "CONTENT_SCRIPT_READY") {
+      console.log(
+        "Página analisada:",
+        message.url
+      );
     }
 
-    return Promise.resolve({
-      pageUrl: relatorio.pageUrl,
-      requestCount: relatorio.requestCount,
-      thirdParties: Array.from(
-        relatorio.thirdParties.values()
-      )
-    });
+    if (message.type === "STORAGE_REPORT") {
+      const tabId =
+        sender.tab && sender.tab.id;
+
+      if (typeof tabId === "number") {
+        let relatorio =
+          relatoriosPorAba.get(tabId);
+
+        if (!relatorio) {
+          const urlDaAba =
+            sender.tab.url ||
+            message.url ||
+            "";
+
+          relatorio =
+            criarRelatorio(urlDaAba);
+
+          relatoriosPorAba.set(
+            tabId,
+            relatorio
+          );
+        }
+
+        relatorio.storage =
+          message.data;
+
+        console.log(
+          "Armazenamento analisado:",
+          message.data
+        );
+      }
+
+      return {
+        success: true
+      };
+    }
+
+    if (message.type === "GET_REPORT") {
+      const relatorio =
+        relatoriosPorAba.get(message.tabId);
+
+      if (!relatorio) {
+        return {
+          pageUrl: "",
+          requestCount: 0,
+          cookieCount: 0,
+          thirdParties: [],
+          storage: criarArmazenamentoVazio()
+        };
+      }
+
+      let cookiesDaPagina = [];
+
+      try {
+        if (
+          relatorio.pageUrl.startsWith("http://") ||
+          relatorio.pageUrl.startsWith("https://")
+        ) {
+          cookiesDaPagina =
+            await browser.cookies.getAll({
+              url: relatorio.pageUrl
+            });
+        }
+      } catch (erro) {
+        console.error(
+          "Erro ao consultar cookies:",
+          erro
+        );
+      }
+
+      return {
+        pageUrl: relatorio.pageUrl,
+        requestCount:
+          relatorio.requestCount,
+        cookieCount:
+          cookiesDaPagina.length,
+        thirdParties: Array.from(
+          relatorio.thirdParties.values()
+        ),
+        storage: relatorio.storage
+      };
+    }
   }
-});
+);
